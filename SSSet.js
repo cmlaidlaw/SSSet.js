@@ -196,7 +196,7 @@ SSSet.prototype.build = function( arr ) {
 
 
 /**
- * empty
+ * clear
  *
  * Removes all members of 'this' set.
  **/
