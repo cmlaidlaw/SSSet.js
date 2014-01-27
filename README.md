@@ -1,25 +1,22 @@
-SSSet.js
-========
+# SSSet.js
 
 A featureful implementation of mathematical sets for JavaScript
 
-Constructor
------------
+### Constructor
+
 
     SSSet( [member1, member2, ...memberN], <optional comparisonFunction> )
 
 *Comparison function must return -1, 0 or 1 for a, b tests in which a falls before, identically or after b*
 
-Basic Properties
-----------------
+### Basic Properties
 
     .cardinality()
     .has( member )
     .enumerate()
 
 
-Creating & Modifying
---------------------
+### Creating & Modifying
 
     .add( member )
     .remove( member )
@@ -27,8 +24,7 @@ Creating & Modifying
     .clear()
 
 
-Collection Operations
----------------------
+### Collection Operations
 
     .map( mapFunction )
     .filter( predicate )
@@ -36,8 +32,7 @@ Collection Operations
     .foldRight( reduceFunction, <optional initialValue> )
 
 
-Set Operations
------------------
+### Set Operations
 
     .union( set )
     .intersection( set )
@@ -45,8 +40,7 @@ Set Operations
     .difference( set )
 
 
-Set Properties
---------------
+### Set Properties
 
     .isEmpty()
     .isEqual()
