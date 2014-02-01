@@ -56,35 +56,13 @@
 			}
 		},
 		{
-			name: 'add, build respect non-standard sort',
-			test: function() {
-				var comp = function( a, b ) {
-						if ( a > b ) {
-							return -1;
-						} else if ( a === b ) {
-							return 0;
-						} else {
-							return 1;
-						}
-					},
-					a = new SSSet( false, comp ),
-					b = new SSSet( false, comp ),
-					i;
-				a.build( [1,2,3,4,5,6,7,8,9] );
-				for ( i = 1; i < 10; i++ ) {
-					b.add( i );
-				}
-				return ( testArraysEqual( a._members, [9,8,7,6,5,4,3,2,1] )
-						 && testArraysEqual( a._members, b._members ) );
-			}		
-		},
-		{
 			name: 'add, remove leaves no members',
 			test: function() {
 				var	a = new SSSet();
 				a.add( 1 );
 				a.remove( 1 );
-				return testArraysEqual( a._members, [] );
+				console.log( a.enumerate() );
+				return testArraysEqual( a.enumerate(), [] );
 			}
 		},
 		{
@@ -94,7 +72,7 @@
 				a.add( 1 );
 				a.add( 2 );
 				a.remove( 2 );
-				return testArraysEqual( a._members, [1] );
+				return testArraysEqual( a.enumerate(), [1] );
 			}
 		},
 		{
@@ -104,7 +82,7 @@
 				a.add( 1 );
 				a.add( 2 );
 				a.remove( 3 );
-				return testArraysEqual( a._members, [1,2] );
+				return testArraysEqual( a.enumerate(), [1,2] );
 			}
 		},
 		{
@@ -120,7 +98,7 @@
 			test: function() {
 				var	a = new SSSet();
 				a.add( 1 );
-				return a.has( '1' );
+				return ! a.has( '1' );
 			}
 		},
 		{
@@ -128,7 +106,7 @@
 			test: function() {
 				var	a = new SSSet();
 				a.clear();
-				return testArraysEqual( a._members, [] );
+				return testArraysEqual( a.enumerate(), [] );
 			}
 		},
 		{
@@ -139,7 +117,7 @@
 				a.add( 2 );
 				a.add( 3 );
 				a.clear();
-				return testArraysEqual( a._members, [] );
+				return testArraysEqual( a.enumerate(), [] );
 			}
 		},
 		{
@@ -153,24 +131,6 @@
 			}
 		},
 		{
-			name: 'enumerate respects non-standard sort',
-			test: function() {
-				var	a = new SSSet( false, function( a, b ) {
-					if ( a > b ) {
-						return -1;
-					} else if ( a === b ) {
-						return 0;
-					} else {
-						return 1;
-					}
-				} );
-				a.add( 1 );
-				a.add( 2 );
-				a.add( 3 );
-				return testArraysEqual( a.enumerate(), [3,2,1] );
-			}
-		},
-		{
 			name: 'map returns correct values',
 			test: function() {
 				var	a = new SSSet();
@@ -178,7 +138,8 @@
 				a.add( 2 );
 				a.add( 3 );
 				a.map( function( x ) { return x*x; } );
-				return testArraysEqual( a._members, [1,4,9] );
+				console.log( a );
+				return testArraysEqual( a.enumerate(), [1,4,9] );
 			}
 		},
 		{
@@ -189,7 +150,7 @@
 				a.add( 2 );
 				a.add( 3 );
 				a.filter( function( x ) { return x < 3; } );
-				return testArraysEqual( a._members, [1,2] );
+				return testArraysEqual( a.enumerate(), [1,2] );
 			}
 		},
 		{
@@ -218,7 +179,7 @@
 				var	a = new SSSet(),
 					b = new SSSet(),
 					c = a.union( b );
-				return testArraysEqual( c._members, [] );
+				return testArraysEqual( c.enumerate(), [] );
 			}
 		},
 		{
@@ -227,7 +188,7 @@
 				var	a = new SSSet( [1,2,3] ),
 					b = new SSSet( [1,2,3] ),
 					c = a.union( b );
-				return testArraysEqual( c._members, [1,2,3] );
+				return testArraysEqual( c.enumerate(), [1,2,3] );
 			}
 		},
 		{
@@ -236,7 +197,7 @@
 				var	a = new SSSet( [1,2,3] ),
 					b = new SSSet(),
 					c = a.union( b );
-				return testArraysEqual( c._members, [1,2,3] );
+				return testArraysEqual( c.enumerate(), [1,2,3] );
 			}
 		},
 		{
@@ -245,7 +206,7 @@
 				var	a = new SSSet( [1,2,3] ),
 					b = new SSSet( [4,5,6] ),
 					c = a.union( b );
-				return testArraysEqual( c._members, [1,2,3,4,5,6] );
+				return testArraysEqual( c.enumerate(), [1,2,3,4,5,6] );
 			}
 		},
 		{
@@ -254,7 +215,7 @@
 				var	a = new SSSet(),
 					b = new SSSet(),
 					c = a.intersection( b );
-				return testArraysEqual( c._members, [] );
+				return testArraysEqual( c.enumerate(), [] );
 			}
 		},
 		{
@@ -263,7 +224,7 @@
 				var	a = new SSSet( [1,2,3] ),
 					b = new SSSet( [1,2,3] ),
 					c = a.intersection( b );
-				return testArraysEqual( c._members, [1,2,3] );
+				return testArraysEqual( c.enumerate(), [1,2,3] );
 			}
 		},
 		{
@@ -272,7 +233,7 @@
 				var	a = new SSSet( [1,2,3] ),
 					b = new SSSet(),
 					c = a.intersection( b );
-				return testArraysEqual( c._members, [] );
+				return testArraysEqual( c.enumerate(), [] );
 			}
 		},
 		{
@@ -281,7 +242,7 @@
 				var	a = new SSSet( [1,2,3] ),
 					b = new SSSet( [4,5,6] ),
 					c = a.intersection( b );
-				return testArraysEqual( c._members, [] );
+				return testArraysEqual( c.enumerate(), [] );
 			}
 		},
 		{
@@ -290,7 +251,7 @@
 				var	a = new SSSet(),
 					b = new SSSet(),
 					c = a.complement( b );
-				return testArraysEqual( c._members, [] );
+				return testArraysEqual( c.enumerate(), [] );
 			}
 		},
 		{
@@ -299,7 +260,7 @@
 				var	a = new SSSet( [1,2,3] ),
 					b = new SSSet( [1,2,3] ),
 					c = a.complement( b );
-				return testArraysEqual( c._members, [] );
+				return testArraysEqual( c.enumerate(), [] );
 			}
 		},
 		{
@@ -308,7 +269,7 @@
 				var	a = new SSSet(),
 					b = new SSSet( [1,2,3] ),
 					c = a.complement( b );
-				return testArraysEqual( c._members, [1,2,3] );
+				return testArraysEqual( c.enumerate(), [1,2,3] );
 			}
 		},
 		{
@@ -317,7 +278,7 @@
 				var	a = new SSSet( [1,2,3] ),
 					b = new SSSet( [4,5,6] ),
 					c = a.complement( b );
-				return testArraysEqual( c._members, [4,5,6] );
+				return testArraysEqual( c.enumerate(), [4,5,6] );
 			}
 		},
 		{
@@ -326,7 +287,7 @@
 				var	a = new SSSet( [1,2,3,4,5,6] ),
 					b = new SSSet( [5,6,7] ),
 					c = a.complement( b );
-				return testArraysEqual( c._members, [7] );
+				return testArraysEqual( c.enumerate(), [7] );
 			}
 		},
 		{
@@ -335,7 +296,7 @@
 				var	a = new SSSet( [1,2,3] ),
 					b = new SSSet( [2,3,4,5,6,7] ),
 					c = a.complement( b );
-				return testArraysEqual( c._members, [4,5,6,7] );
+				return testArraysEqual( c.enumerate(), [4,5,6,7] );
 			}
 		},
 		{
@@ -344,7 +305,7 @@
 				var	a = new SSSet(),
 					b = new SSSet(),
 					c = a.difference( b );
-				return testArraysEqual( c._members, [] );
+				return testArraysEqual( c.enumerate(), [] );
 			}
 		},
 		{
@@ -353,7 +314,7 @@
 				var	a = new SSSet( [1,2,3] ),
 					b = new SSSet( [1,2,3] ),
 					c = a.difference( b );
-				return testArraysEqual( c._members, [] );
+				return testArraysEqual( c.enumerate(), [] );
 			}
 		},
 		{
@@ -362,7 +323,8 @@
 				var	a = new SSSet( [1,2,3] ),
 					b = new SSSet(),
 					c = a.difference( b );
-				return testArraysEqual( c._members, [1,2,3] );
+				console.log( a.enumerate(), b.enumerate(), c.enumerate() );
+				return testArraysEqual( c.enumerate(), [1,2,3] );
 			}
 		},
 		{
@@ -371,7 +333,7 @@
 				var	a = new SSSet( [1,2,3] ),
 					b = new SSSet( [4,5,6] ),
 					c = a.difference( b );
-				return testArraysEqual( c._members, [1,2,3] );
+				return testArraysEqual( c.enumerate(), [1,2,3] );
 			}
 		},
 		{
@@ -380,7 +342,7 @@
 				var	a = new SSSet( [1,2,3,4,5,6] ),
 					b = new SSSet( [5,6,7] ),
 					c = a.difference( b );
-				return testArraysEqual( c._members, [1,2,3,4] );
+				return testArraysEqual( c.enumerate(), [1,2,3,4] );
 			}
 		},
 		{
@@ -389,7 +351,7 @@
 				var	a = new SSSet( [1,2,3] ),
 					b = new SSSet( [2,3,4,5,6,7] ),
 					c = a.difference( b );
-				return testArraysEqual( c._members, [1] );
+				return testArraysEqual( c.enumerate(), [1] );
 			}
 		},
 		{
@@ -485,7 +447,7 @@
 			test: function() {
 				var	a = new SSSet( [1] ),
 					b = new SSSet( ['1'] );
-				return ( ! a.isDisjoint( b ) );
+				return a.isDisjoint( b );
 			}
 		}
 	],
