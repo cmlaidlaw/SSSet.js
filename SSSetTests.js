@@ -61,7 +61,6 @@
 				var	a = new SSSet();
 				a.add( 1 );
 				a.remove( 1 );
-				console.log( a.enumerate() );
 				return testArraysEqual( a.enumerate(), [] );
 			}
 		},
@@ -138,7 +137,6 @@
 				a.add( 2 );
 				a.add( 3 );
 				a.map( function( x ) { return x*x; } );
-				console.log( a );
 				return testArraysEqual( a.enumerate(), [1,4,9] );
 			}
 		},
@@ -323,7 +321,6 @@
 				var	a = new SSSet( [1,2,3] ),
 					b = new SSSet(),
 					c = a.difference( b );
-				console.log( a.enumerate(), b.enumerate(), c.enumerate() );
 				return testArraysEqual( c.enumerate(), [1,2,3] );
 			}
 		},
