@@ -7,26 +7,11 @@
  * operations.
  *
  * @param elements: an array of elements to pass to the build method
- * @param compareFn: the comparison function which will be used to maintain sorted order
- *
- * compareFn return values must follow this convention:
- *   -1: a will be placed before b
- *    0: a is equal to b and will be placed before b
- *    1: a will be placed after b
  **/
 
-SSSet = function( elements, compareFn ) {
+SSSet = function( elements ) {
 	'use strict';
-	this._members = [];
-	if ( typeof compareFn === 'function' ) {
-		this._compareFn = compareFn;
-	} else {
-		this._compareFn = function( a, b ) {
-			if ( a > b ) { return 1; }
-			else if ( a < b ) { return -1; }
-			else { return 0 }
-		};
-	}
+	this._members = {};
 	if ( typeof elements !== 'undefined' ) {
 		this.build( elements );
 	}
@@ -45,50 +30,34 @@ SSSet = function( elements, compareFn ) {
  **/
 
 SSSet.prototype._type = function() {
-	return 'Set';
+	return 'SSSet';
 };
 
 /**
- * _searchElements
+ * _hash
  *
- * @param arr: the array of elements to search
- * @param element: the value for which we are searching
+ * @param element: the element for which to calculate a hashed value
  *
- * Performs a binary search of the elements array, returning an object indicating
- * whether or not the specified element was found and an index.
- *
- * If the value was found, index points to the value's location within the
- * array of elements.
- *
- * If the value was not found, index points to the correct index for insertion
- * using which would preserve the correctly sorted order.
+ * Returns a hash key representing the specified element.
  **/
 
-SSSet.prototype._searchElements = function( arr, element ) {
+SSSet.prototype._hash = function( element ) {
 	'use strict';
-	var min = 0,
-		max = arr.length - 1,
-		current,
-		value,
-		result,
-		compare;
-	while ( min <= max ) {
-		result = ( min + max ) / 2 | 0;
-		current = arr[result];
-		try {
-			compare = this._compareFn( current, element );
-		} catch ( e ) {
-			throw 'SSSet Exception: Comparison function failed.';
-		}
-		if ( compare < 0 ) {
-			min = result + 1;
-		} else if ( compare > 0 ) {
-			max = result - 1;
-		} else {
-			return { found: true, index: result };
-		}
-	}
-	return { found: false, index: max + 1};
+	return JSON.stringify( element );
+};
+
+/**
+ * _searchMembers
+ *
+ * @param members: the set to search
+ * @param element: the element for which we are searching
+ *
+ * Tests for an element's membership in the specified set.
+ **/
+
+SSSet.prototype._searchMembers = function( members, element ) {
+	'use strict';
+	return members.hasOwnProperty( this._hash( element ) );
 };
 
 
@@ -103,7 +72,7 @@ SSSet.prototype._searchElements = function( arr, element ) {
 
 SSSet.prototype.isEmpty = function() {
 	'use strict';
-	return ( this._members.length > 0 ) ? false: true;
+	return ( Object.keys( this._members ).length > 0 ) ? false: true;
 };
 
 
@@ -115,7 +84,7 @@ SSSet.prototype.isEmpty = function() {
 
 SSSet.prototype.cardinality = function() {
 	'use strict';
-	return this._members.length;
+	return Object.keys( this._members ).length;
 };
 
 
@@ -130,9 +99,9 @@ SSSet.prototype.cardinality = function() {
 
 SSSet.prototype.add = function( element ) {
 	'use strict';
-	var result = this._searchElements( this._members, element );
-	if ( ! result.found ) {
-		this._members.splice( result.index, 0, element );
+	var key = this._hash( element );
+	if ( ! this._members.hasOwnProperty( key ) ) {
+		this._members[key] = element;
 	}
 	return this;
 };
@@ -149,10 +118,9 @@ SSSet.prototype.add = function( element ) {
 
 SSSet.prototype.remove = function( element ) {
 	'use strict';
-	var result;
-	result = this._searchElements( this._members, element );
-	if ( result.found ) {
-		this._members.splice( result.index, 1 );
+	var key = this._hash( element );
+	if ( this._members.hasOwnProperty( key ) ) {
+		delete this._members[key];
 	}
 	return this;
 };
@@ -168,7 +136,8 @@ SSSet.prototype.remove = function( element ) {
 
 SSSet.prototype.has = function( element ) {
 	'use strict';
-	return this._searchElements( this._members, element ).found;
+	var key = this._hash( element );
+	return this._members.hasOwnProperty( key );
 };
 
 
@@ -186,10 +155,7 @@ SSSet.prototype.build = function( arr ) {
 		i,
 		last;
 	for ( i = 0; i < length; i++ ) {
-		if ( i === 0 || arr[i] !== last ) {
-			this.add( arr[i] );
-			last = arr[i];
-		}
+		this.add( arr[i] );
 	}
 	return this;
 };
@@ -203,7 +169,7 @@ SSSet.prototype.build = function( arr ) {
 
 SSSet.prototype.clear = function() {
 	'use strict';
-	this._members = [];
+	this._members = {};
 	return this;
 };
 
@@ -216,7 +182,14 @@ SSSet.prototype.clear = function() {
 
 SSSet.prototype.enumerate = function() {
 	'use strict';
-	return this._members;
+	var members = [],
+		key;
+	for ( key in this._members ) {
+		if ( this._members.hasOwnProperty( key ) ) {
+			members.push( this._members[key] );
+		}
+	}
+	return members;
 };
 
 
@@ -233,7 +206,14 @@ SSSet.prototype.enumerate = function() {
 
 SSSet.prototype.map = function( fn ) {
 	'use strict';
-	this._members = this._members.map( fn );
+	var members = this.enumerate().map( fn ),
+		i,
+		length = members.length,
+		s = new SSSet();
+	for ( i = 0; i < length; i++ ) {
+		s.add( members[i] );
+	}
+	this._members = s._members;
 	return this;
 };
 
@@ -251,7 +231,14 @@ SSSet.prototype.map = function( fn ) {
 
 SSSet.prototype.filter = function( fn ) {
 	'use strict';
-	this._members = this._members.filter( fn );
+	var members = this.enumerate().filter( fn ),
+		i,
+		length = members.length,
+		s = new SSSet();
+	for ( i = 0; i < length; i++ ) {
+		s.add( members[i] );
+	}
+	this._members = s._members;
 	return this;
 };
 
@@ -274,7 +261,7 @@ SSSet.prototype.foldLeft = function( fn, initial ) {
 	if ( typeof initial === 'undefined' ) {
 		initial = 0;
 	}
-	return this._members.reduce( fn, initial );
+	return this.enumerate().reduce( fn, initial );
 };
 
 
@@ -293,10 +280,11 @@ SSSet.prototype.foldLeft = function( fn, initial ) {
 
 SSSet.prototype.foldRight = function( fn, initial ) {
 	'use strict';
+	'use strict';
 	if ( typeof initial === 'undefined' ) {
 		initial = 0;
 	}
-	return this._members.reduceRight( fn, initial );
+	return this.enumerate().reduceRight( fn, initial );
 };
 
 
@@ -310,19 +298,27 @@ SSSet.prototype.foldRight = function( fn, initial ) {
 
 SSSet.prototype.union = function( other ) {
 	'use strict';
-	var length,
+	var keys,
+		length,
 		i,
-		union = new SSSet( this._members, this._compareFn );
-	if ( typeof other._type === 'function' && other._type() === 'Set' ) {
-		length = other._members.length;
+		union = new SSSet();
+	if ( typeof other._type === 'function' && other._type() === 'SSSet' ) {
+		keys = Object.keys( this._members );
+		length = keys.length;
 		for ( i = 0; i < length; i++ ) {
-			union.add( other._members[i] );
+			union._members[keys[i]] = this._members[keys[i]];
+		}
+		keys = Object.keys( other._members );
+		length = keys.length;
+		for ( i = 0; i < length; i++ ) {
+			union.add( other._members[keys[i]] );
 		}
 		return union;
 	} else {
 		throw 'SSSet Exception: Cannot take union: `other` parameter is not a set.';
 	}
 };
+
 
 /**
  * intersection
@@ -334,18 +330,30 @@ SSSet.prototype.union = function( other ) {
 
 SSSet.prototype.intersection = function( other ) {
 	'use strict';
-	var length,
+	var thisKeys,
+		otherKeys,
 		i,
-		intersection = new SSSet( [], this._compareFn ),
-		item,
-		result;
-	if ( typeof other._type === 'function' && other._type() === 'Set' ) {
-		length = other._members.length;
-		for ( i = 0; i < length; i++ ) {
-			item = this._members[i];
-			result = this._searchElements( other._members, item );
-			if ( result.found ) {
-				intersection.add( item );
+		length,
+		thisKey,
+		intersection = new SSSet();
+	if ( typeof other._type === 'function' && other._type() === 'SSSet' ) {
+		thisKeys = Object.keys( this._members );
+		otherKeys = Object.keys( other._members );
+		if ( thisKeys.length <= otherKeys.length ) {
+			length = thisKeys.length;
+			for ( i = 0; i < length; i++ ) {
+				thisKey = thisKeys[i];
+				if ( other._members.hasOwnProperty( thisKey ) ) {
+					intersection._members[thisKey] = this._members[thisKey];
+				}
+			}
+		} else {
+			length = otherKeys.length;
+			for ( i = 0; i < length; i++ ) {
+				thisKey = otherKeys[i];
+				if ( this._members.hasOwnProperty( thisKey ) ) {
+					intersection._members[thisKey] = other._members[thisKey];
+				}
 			}
 		}
 		return intersection;
@@ -365,18 +373,18 @@ SSSet.prototype.intersection = function( other ) {
 
 SSSet.prototype.complement = function( other ) {
 	'use strict';
-	var length,
+	var keys,
+		length,
 		i,
-		complement = new SSSet( [], this._compareFn ),
-		item,
-		result;
-	if ( typeof other._type === 'function' && other._type() === 'Set' ) {
-		length = other._members.length;
+		thisKey,
+		complement = new SSSet();
+	if ( typeof other._type === 'function' && other._type() === 'SSSet' ) {
+		keys = Object.keys( other._members );
+		length = keys.length;
 		for ( i = 0; i < length; i++ ) {
-			item = other._members[i];
-			result = this._searchElements( this._members, item );
-			if ( ! result.found ) {
-				complement.add( item );
+			thisKey = keys[i];
+			if ( ! this._members.hasOwnProperty( thisKey ) ) {
+				complement._members[thisKey] = other._members[thisKey];
 			}
 		}
 		return complement;
@@ -396,18 +404,18 @@ SSSet.prototype.complement = function( other ) {
 
 SSSet.prototype.difference = function( other ) {
 	'use strict';
-	var length,
+	var keys,
+		length,
 		i,
-		difference = new SSSet( [], this._compareFn ),
-		item,
-		result;
-	if ( typeof other._type === 'function' && other._type() === 'Set' ) {
-		length = this._members.length;
+		thisKey,
+		difference = new SSSet( [], this._compareFn );
+	if ( typeof other._type === 'function' && other._type() === 'SSSet' ) {
+		keys = Object.keys( this._members );
+		length = keys.length;
 		for ( i = 0; i < length; i++ ) {
-			item = this._members[i];
-			result = this._searchElements( other._members, item );
-			if ( ! result.found ) {
-				difference.add( item );
+			thisKey = keys[i];
+			if ( ! other._members.hasOwnProperty( thisKey ) ) {
+				difference._members[thisKey] = this._members[thisKey];
 			}
 		}
 		return difference;
@@ -427,18 +435,15 @@ SSSet.prototype.difference = function( other ) {
 
 SSSet.prototype.isEqual = function( other ) {
 	'use strict';
-	var length = this._members.length,
-		i,
-		compare;
-	if ( length === other._members.length ) {
-		for ( i = 0; i < length; i++ ) {
-			try {
-				compare = this._compareFn( this._members[i], other._members[i] );
-			} catch ( e ) {
-				throw 'SSSet Exception: Comparison function failed.';
-			}
-			if ( compare !== 0 ) {
-				return false;
+	var keys = Object.keys( this._members ),
+		key,
+		thisKey;
+	if ( length === Object.keys( other._members ).length ) {
+		for ( key in keys ) {
+			thisKey = keys[key];
+			if ( this._members.hasOwnProperty( thisKey )
+				 && ! other._members.hasOwnProperty( thisKey ) ) {
+				return false;	   
 			}
 		}
 		return true;
@@ -457,33 +462,25 @@ SSSet.prototype.isEqual = function( other ) {
 
 SSSet.prototype.isSubset = function( other ) {
 	'use strict';
-	var length,
-		start,
-		end,
-		i,
-		j;
-	if ( typeof other._type === 'function' && other._type() === 'Set' ) {
-		length = this._members.length;
+	var keys = Object.keys( this._members ),
+		key,
+		thisKey;
+	if ( typeof other._type === 'function' && other._type() === 'SSSet' ) {
+		length = keys.length;
 		if ( length === 0 ) {
 			return true;
-		} else if ( length <= other._members.length ) {
-			start = this._searchElements( other._members, this._members[0] );
-			end = this._searchElements( other._members, this._members[length - 1] );
-			if ( start.found && end.found ) {
-				i = 1; // Don't need to search for the first element
-				length--; // Don't need to search for the last element either
-				j = start.index;
-				end = end.index;
-				while ( j < end ) {
-					if ( this._members[i] === other._members[j] ) {
-						i++;
-					}
-					j++;
+		} else if ( length <= Object.keys( other._members ).length ) {
+			for ( key in keys ) {
+				thisKey = keys[key];
+				if ( this._members.hasOwnProperty( thisKey )
+					 && ! other._members.hasOwnProperty( thisKey ) ) {
+					return false;
 				}
-				return i === length;
 			}
+			return true;
+		} else {
+			return false;
 		}
-		return false;
 	} else {
 		throw 'SSSet Exception: Cannot check subset: `other` parameter is not a set.';
 	}
@@ -500,9 +497,10 @@ SSSet.prototype.isSubset = function( other ) {
 
 SSSet.prototype.isProperSubset = function( other ) {
 	'use strict';
-	if ( typeof other._type === 'function' && other._type() === 'Set' ) {
+	if ( typeof other._type === 'function' && other._type() === 'SSSet' ) {
 		return ( this.isSubset( other )
-				 && this._members.length < other._members.length );
+				 && Object.keys( this._members ).length
+				 	< Object.keys( other._members ).length );
 	} else {
 		throw 'SSSet Exception: Cannot check subset: `other` parameter is not a set.';
 	}
@@ -519,7 +517,7 @@ SSSet.prototype.isProperSubset = function( other ) {
 
 SSSet.prototype.isSuperset = function( other ) {
 	'use strict';
-	if ( typeof other._type === 'function' && other._type() === 'Set' ) {
+	if ( typeof other._type === 'function' && other._type() === 'SSSet' ) {
 		return other.isSubset( this );
 	} else {
 		throw 'SSSet Exception: Cannot check superset: `other` parameter is not a set.';
@@ -537,7 +535,7 @@ SSSet.prototype.isSuperset = function( other ) {
 
 SSSet.prototype.isProperSuperset = function( other ) {
 	'use strict';
-	if ( typeof other._type === 'function' && other._type() === 'Set' ) {
+	if ( typeof other._type === 'function' && other._type() === 'SSSet' ) {
 		return other.isProperSubset( this );
 	} else {
 		throw 'SSSet Exception: Cannot check superset: `other` parameter is not a set.';
@@ -556,7 +554,7 @@ SSSet.prototype.isProperSuperset = function( other ) {
 SSSet.prototype.isDisjoint = function( other ) {
 	'use strict';
 	var intersection
-	if ( typeof other._type === 'function' && other._type() === 'Set' ) {
+	if ( typeof other._type === 'function' && other._type() === 'SSSet' ) {
 		return this.intersection( other ).isEmpty();
 	} else {
 		throw 'SSSet Exception: Cannot check if disjoint: `other` parameter is not a set.';
@@ -572,5 +570,5 @@ SSSet.prototype.isDisjoint = function( other ) {
 
 SSSet.prototype.toString = function() {
 	'use strict';
-	return 'SSSet: {' + this._members.toString() + '}';
+	return 'SSSet: {' + this.enumerate().toString() + '}';
 };
