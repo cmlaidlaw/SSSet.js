@@ -1,6 +1,6 @@
 # SSSet.js
 
-A featureful implementation of mathematical sets for JavaScript. Insertions and membership tests are handled with a fast binary search.
+A featureful implementation of mathematical sets for JavaScript. Optimized for membership tests and the union, intersection, complement and difference operations.
 
 ### Constructor
 
